@@ -9,6 +9,7 @@ import { getMoodDistribution } from "../analytics/moodDistribution";
 import { getStandoutDays } from "../analytics/standoutDays";
 import { getAchievements } from "../analytics/achievements";
 import { getNotesAnalysis } from "../analytics/notes";
+import { getYearInReview } from "../analytics/yearInReview";
 import { getInsights } from "../analytics/insights";
 import { DataContext, type DataContextValue } from "./context";
 
@@ -44,6 +45,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       standoutDays: getStandoutDays(scored, monthlyMood),
       achievements: getAchievements(scored, moodOrder),
       notesAnalysis: getNotesAnalysis(scored, moodOrder),
+      yearInReview: getYearInReview(scored, moodOrder),
       insights: getInsights(yearOverYear, activityStats, moodOrder, historyHeader.startDate),
     };
   }, [rawEntries, moodOrder]);

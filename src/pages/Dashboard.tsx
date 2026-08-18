@@ -8,6 +8,7 @@ import { ActivityHeatmap } from "../components/ActivityHeatmap";
 import { MoodDistribution } from "../components/MoodDistribution";
 import { StandoutDays } from "../components/StandoutDays";
 import { NotesAnalysis } from "../components/NotesAnalysis";
+import { YearInReview } from "../components/YearInReview";
 import { Achievements } from "../components/Achievements";
 import { KeyInsights } from "../components/KeyInsights";
 import { Reveal } from "../components/Reveal";
@@ -96,6 +97,11 @@ export function Dashboard() {
       id: "activityHeatmap",
       label: "Activity heatmap",
       node: <ActivityHeatmap stats={dashboardData.activityStats} />,
+    },
+    {
+      id: "share",
+      label: "Share",
+      node: <YearInReview scopes={dashboardData.yearInReview} moodOrder={dashboardData.moodOrder} />,
     },
   ];
 

@@ -15,3 +15,9 @@ export function formatMonthYear(monthKey: string): string {
     month: "long",
   });
 }
+
+/** e.g. "Mar 14" — no year, for compact stat labels where the scope already
+ * establishes the year (or spans several, where the day/month is the point). */
+export function formatShortDate(date: Date): string {
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}

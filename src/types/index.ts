@@ -90,6 +90,27 @@ export interface NotesAnalysisScope {
   totalEntries: number;
 }
 
+/** One share-card's worth of data: a single calendar year, or "All time".
+ * Deliberately excludes anything note-derived — Plan.md Tier 1 "Year in
+ * Review export" scopes notes out of the shareable image by default, and
+ * this app never sends anything off-device, so what's in here is exactly
+ * what a user could end up posting publicly. */
+export interface YearInReviewData {
+  label: string; // "2024" or "All time"
+  year: number | null; // null for "All time"
+  isPartial: boolean;
+  avgMood: number; // 0 = worst mood, moodOrder.length - 1 = best mood
+  avgMoodDeltaPct: number | null; // vs. the previous calendar year; null for "All time" or the first year
+  entryCount: number;
+  daysTracked: number;
+  spanDays: number; // coverage denominator — days actually trackable in this scope (Plan.md principle 5)
+  activityDiversity: number;
+  moodPercentages: Record<string, number>; // mood label -> 0-100
+  topActivities: { activity: string; pctDays: number }[];
+  bestDay: { date: Date; moodValue: number } | null;
+  monthlySparkline: number[]; // avg mood per month present in scope, chronological
+}
+
 export interface DashboardData {
   moodOrder: string[]; // worst -> best
   historyHeader: HistoryHeaderData;
@@ -101,5 +122,6 @@ export interface DashboardData {
   standoutDays: StandoutDaysResult;
   achievements: Achievement[];
   notesAnalysis: NotesAnalysisScope[];
+  yearInReview: YearInReviewData[];
   insights: string[];
 }
