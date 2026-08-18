@@ -5,7 +5,7 @@ A local dashboard for [Daylio](https://daylio.net/) CSV exports, built to show m
 Runs entirely in the browser. No backend, no accounts, no data leaves your device.
 
 <p align="center">
-  <img src="demo.gif" alt="Daylytics demo" width="600">
+  <img src=".github/demo.gif" alt="Daylytics demo" width="600">
 </p>
 
 ## Features
@@ -22,27 +22,9 @@ Runs entirely in the browser. No backend, no accounts, no data leaves your devic
 
 - 100% local, nothing leaves the browser
 - No backend, no accounts
-- Multi-year view by default
+- Open-source
 - Handles messy or partial data with visible coverage signals
 - No AI
-
-## Getting started
-
-Requires Node.js v22+.
-
-```bash
-npm install
-npm run dev
-```
-
-Open `http://localhost:5173` and drop in a Daylio CSV export (Settings > Export > Export as CSV). No export handy? Use `daylio_export_mock.csv` in the repo root, it's synthetic test data.
-
-```bash
-npm run build   # type-check and build
-npm run lint
-```
-
-To test on your phone over Wi-Fi: `npm run dev -- --host`
 
 ## Tech stack
 
