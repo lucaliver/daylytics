@@ -4,6 +4,8 @@ A local dashboard for [Daylio](https://daylio.net/) CSV exports, built to show m
 
 Runs entirely in the browser. No backend, no accounts, no data leaves your device.
 
+![Daylytics demo](demo.gif)
+
 ## Features
 
 - Mood timeline with monthly average and moving average
