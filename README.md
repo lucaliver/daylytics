@@ -4,7 +4,9 @@ A local dashboard for [Daylio](https://daylio.net/) CSV exports, built to show m
 
 Runs entirely in the browser. No backend, no accounts, no data leaves your device.
 
-![Daylytics demo](demo.gif)
+<p align="center">
+  <img src="demo.gif" alt="Daylytics demo" width="600">
+</p>
 
 ## Features
 
