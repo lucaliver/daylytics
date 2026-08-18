@@ -1,19 +1,85 @@
-import { useMemo, useState } from "react";
+import { Wordcloud } from "@visx/wordcloud";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { NotesAnalysisScope, WordFrequency } from "../types";
 import { Card } from "./Card";
 import { MoodFace } from "./MoodFace";
 
 const MIN_FONT = 13;
-const MAX_FONT = 30;
+const MAX_FONT = 64;
+const CLOUD_FONT_FAMILY = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
-function wordFontSize(count: number, min: number, max: number): number {
-  if (max === min) return (MIN_FONT + MAX_FONT) / 2;
-  // sqrt rather than linear so one outlier word doesn't dwarf everything else.
-  const t = (Math.sqrt(count) - Math.sqrt(min)) / (Math.sqrt(max) - Math.sqrt(min));
-  return MIN_FONT + t * (MAX_FONT - MIN_FONT);
+// Vivid, varied hues against the app's dark surface — leans on the accent
+// green and info blue already used elsewhere, plus a few extra colors so the
+// cloud doesn't read as monochrome the way the old inline word list did.
+const CLOUD_COLORS = [
+  "#34c471",
+  "#5b9bf5",
+  "#a78bfa",
+  "#2dd4bf",
+  "#f0b93a",
+  "#f472b6",
+];
+
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+// Deterministic per word (not Math.random) so the same note text always
+// lays out the same way instead of jiggling on every re-render. Mostly
+// horizontal for readability, a slice rotated 90°, a few gently tilted —
+// the classic word-cloud texture without making most of it hard to read.
+function rotationFor(word: string): number {
+  const h = hashString(word);
+  const bucket = h % 100;
+  if (bucket < 70) return 0;
+  if (bucket < 88) return 90;
+  return (h % 41) - 20;
+}
+
+function colorFor(word: string): string {
+  return CLOUD_COLORS[hashString(word) % CLOUD_COLORS.length];
+}
+
+function useContainerWidth() {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (w) setWidth(Math.round(w));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, width] as const;
 }
 
 function WordCloud({ words }: { words: WordFrequency[] }) {
+  const [containerRef, width] = useContainerWidth();
+  const height = Math.max(200, Math.min(360, Math.round(width * 0.62)));
+
+  const cloudWords = useMemo(() => words.map((w) => ({ text: w.word, value: w.count })), [words]);
+
+  // d3-cloud's layout effect keys off referential identity of these
+  // accessors, so they're memoized on `words` rather than redefined inline —
+  // otherwise every unrelated re-render of this card would re-run the
+  // layout and reshuffle every word's position.
+  const fontSizeAccessor = useMemo(() => {
+    const counts = words.map((w) => w.count);
+    const min = Math.min(...counts);
+    const max = Math.max(...counts);
+    return (datum: { value: number }) => {
+      if (max === min) return (MIN_FONT + MAX_FONT) / 2;
+      const t = (Math.sqrt(datum.value) - Math.sqrt(min)) / (Math.sqrt(max) - Math.sqrt(min));
+      return MIN_FONT + t * (MAX_FONT - MIN_FONT);
+    };
+  }, [words]);
+  const rotateAccessor = useMemo(() => (datum: { text: string }) => rotationFor(datum.text), []);
+
   if (words.length === 0) {
     return (
       <p className="text-sm text-(--color-text-secondary)">
@@ -21,29 +87,44 @@ function WordCloud({ words }: { words: WordFrequency[] }) {
       </p>
     );
   }
-  const counts = words.map((w) => w.count);
-  const min = Math.min(...counts);
-  const max = Math.max(...counts);
 
   return (
-    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
-      {words.map((w) => {
-        const size = wordFontSize(w.count, min, max);
-        return (
-          <span
-            key={w.word}
-            title={`${w.count}×`}
-            style={{ fontSize: `${size}px`, lineHeight: 1 }}
-            className={
-              size >= (MIN_FONT + MAX_FONT) / 2
-                ? "font-bold text-(--color-text-primary)"
-                : "font-medium text-(--color-text-secondary)"
-            }
-          >
-            {w.word}
-          </span>
-        );
-      })}
+    <div
+      ref={containerRef}
+      className="w-full"
+      style={{ height }}
+      role="img"
+      aria-label="Most common words, sized by frequency"
+    >
+      {width > 0 && (
+        <Wordcloud
+          words={cloudWords}
+          width={width}
+          height={height}
+          padding={3}
+          spiral="rectangular"
+          rotate={rotateAccessor}
+          fontSize={fontSizeAccessor}
+          font={CLOUD_FONT_FAMILY}
+        >
+          {(renderedWords) =>
+            renderedWords.map((w, i) => (
+              <text
+                key={`${w.text ?? i}-${i}`}
+                textAnchor="middle"
+                transform={`translate(${w.x ?? 0}, ${w.y ?? 0}) rotate(${w.rotate ?? 0})`}
+                fontSize={w.size ?? MIN_FONT}
+                fontFamily={w.font}
+                fontWeight={700}
+                fill={colorFor(w.text ?? "")}
+              >
+                <title>{`${w.text} · ${words.find((word) => word.word === w.text)?.count ?? 0}×`}</title>
+                {w.text}
+              </text>
+            ))
+          }
+        </Wordcloud>
+      )}
     </div>
   );
 }
