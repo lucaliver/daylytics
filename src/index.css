@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #121317;
+  --color-surface: #1c1e24;
+  --color-surface-2: #26282f;
+  --color-border: #2e313a;
+  --color-text-primary: #f5f6f8;
+  --color-text-secondary: #9a9fac;
+  --color-text-tertiary: #6b6f7b;
+  --color-accent: #34c471;
+  --color-accent-dim: #1f7a48;
+  --color-negative: #e5484d;
+  --color-info: #5b9bf5;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Every rounded+bordered box (cards, pills, tiles) showed a faint double
+ * edge at their corners on high-DPI screens — Chromium anti-aliasing the
+ * border and the background separately where they curve. Clipping the
+ * background to the padding box removes the seam. */
+[class*="rounded-"] {
+  background-clip: padding-box;
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-bg);
+}
+
+/* Thin, unobtrusive scrollbars for the horizontally-scrolling heatmap. */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+.thin-scrollbar::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 999px;
+}
+
+/* Entrance animations. Visible-but-static by default so reduced-motion
+ * users never end up stuck at opacity: 0 — the animation only plays under
+ * the media query below. */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-fade-in-up {
+    animation: fade-in-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+/* Reset the native <dialog> chrome and center it explicitly — components
+ * style the box itself. Relying on the UA stylesheet's own centering was
+ * inconsistent, so `position`/`inset`/`margin` are spelled out here rather
+ * than assumed. */
+dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  max-height: calc(100dvh - 3rem);
+  overflow-y: auto;
+}
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
