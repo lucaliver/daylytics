@@ -1,9 +1,10 @@
-import type { ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import type { Achievement } from "../types";
 import { Card } from "./Card";
 import {
   BadgeIcon,
   BookIcon,
+  ChevronDownIcon,
   FlagIcon,
   FlameIcon,
   GhostIcon,
@@ -14,6 +15,8 @@ import {
   TrophyIcon,
   ZigzagIcon,
 } from "./icons";
+
+const COLLAPSED_COUNT = 3;
 
 const ICONS: Record<string, ComponentType<{ size?: number; className?: string }>> = {
   "origin-story": FlagIcon,
@@ -48,7 +51,12 @@ function renderDescription(text: string) {
 }
 
 export function Achievements({ achievements }: { achievements: Achievement[] }) {
+  const [expanded, setExpanded] = useState(false);
+
   if (achievements.length === 0) return null;
+
+  const hasMore = achievements.length > COLLAPSED_COUNT;
+  const visible = expanded ? achievements : achievements.slice(0, COLLAPSED_COUNT);
 
   return (
     <Card
@@ -56,7 +64,7 @@ export function Achievements({ achievements }: { achievements: Achievement[] }) 
       subtitle="Strange patterns in your data"
     >
       <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {achievements.map((a) => {
+        {visible.map((a) => {
           const Icon = ICONS[a.id] ?? BadgeIcon;
           return (
             <li
@@ -74,6 +82,21 @@ export function Achievements({ achievements }: { achievements: Achievement[] }) 
           );
         })}
       </ul>
+
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-medium text-(--color-text-secondary) transition-colors active:bg-(--color-surface-2)"
+        >
+          {expanded ? "Show less" : `Show ${achievements.length - COLLAPSED_COUNT} more`}
+          <ChevronDownIcon
+            size={14}
+            className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+          />
+        </button>
+      )}
     </Card>
   );
 }
