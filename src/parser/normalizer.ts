@@ -1,21 +1,30 @@
 import type { Entry } from "../types";
 import type { RawDaylioRow } from "./csvParser";
 
-const MIN_WORD_LENGTH = 3;
+export const MIN_WORD_LENGTH = 3;
 
-/** Tokenizes note text into words, independent of language: strip Daylio's
- * literal `<br>` line breaks, lowercase, split on anything that isn't a
- * Unicode letter/number/apostrophe (so accented and non-Latin scripts split
- * correctly too — not just ASCII), then drop very short tokens and
- * anything with no letters at all (bare numbers). No NLP, no stopword
- * list beyond that — stays correct regardless of what language the note is
- * written in (Plan.md §3, Tier 1 "Notes word analysis"). */
-function tokenizeNote(text: string): string[] {
-  const cleaned = text.replace(/<br\s*\/?>/gi, " ");
-  return cleaned
+/** Splits text into lowercase word tokens, independent of language: strip
+ * Daylio's literal `<br>` line breaks, lowercase, split on anything that
+ * isn't a Unicode letter/number/apostrophe (so accented and non-Latin
+ * scripts split correctly too — not just ASCII). Exported because the notes
+ * search box has to put what the user typed through the exact same
+ * character rules, or a query could never match what was indexed. */
+export function splitWords(text: string): string[] {
+  return text
+    .replace(/<br\s*\/?>/gi, " ")
     .toLowerCase()
     .split(/[^\p{L}\p{N}']+/u)
-    .filter((w) => w.length >= MIN_WORD_LENGTH && /\p{L}/u.test(w));
+    .filter(Boolean);
+}
+
+/** Note text as indexable words: `splitWords`, minus very short tokens and
+ * anything with no letters at all (bare numbers). No NLP, no stopword list
+ * beyond that — stays correct regardless of what language the note is
+ * written in (Plan.md §3, Tier 1 "Notes word analysis"). */
+function tokenizeNote(text: string): string[] {
+  return splitWords(text).filter(
+    (w) => w.length >= MIN_WORD_LENGTH && /\p{L}/u.test(w),
+  );
 }
 
 /** Converts raw CSV rows into normalized Entry objects. Scale and note text

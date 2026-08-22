@@ -14,14 +14,7 @@ import {
 import type { MonthlyMoodPoint, YearlyMoodReference } from "../types";
 import { Card } from "./Card";
 import { MoodFace } from "./MoodFace";
-
-/** "2024-01" -> "Jan '24" — a bare month number repeats every year, so the
- * year has to be on the tick itself rather than left to context. */
-function formatMonthTick(monthKey: string): string {
-  const [year, month] = monthKey.split("-").map(Number);
-  const label = new Date(year, month - 1, 1).toLocaleDateString(undefined, { month: "short" });
-  return `${label} '${String(year).slice(-2)}`;
-}
+import { formatMonthShort } from "../lib/format";
 
 function MoodAxisTick({
   x,
@@ -75,7 +68,7 @@ export function MoodTimeline({
             <XAxis
               dataKey="month"
               tick={{ fill: "var(--color-text-secondary)", fontSize: 11 }}
-              tickFormatter={formatMonthTick}
+              tickFormatter={formatMonthShort}
               axisLine={{ stroke: "var(--color-border)" }}
               tickLine={false}
               minTickGap={24}

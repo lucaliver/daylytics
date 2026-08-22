@@ -1,8 +1,9 @@
 import { Wordcloud } from "@visx/wordcloud";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { NotesAnalysisScope, WordFrequency } from "../types";
+import type { NoteSearchIndex, NotesAnalysisScope, WordFrequency } from "../types";
 import { Card } from "./Card";
 import { MoodFace } from "./MoodFace";
+import { NoteWordSearch } from "./NoteWordSearch";
 
 const MIN_FONT = 13;
 const MAX_FONT = 64;
@@ -58,7 +59,13 @@ function useContainerWidth() {
   return [ref, width] as const;
 }
 
-function WordCloud({ words }: { words: WordFrequency[] }) {
+function WordCloud({
+  words,
+  onSelect,
+}: {
+  words: WordFrequency[];
+  onSelect: (word: string) => void;
+}) {
   const [containerRef, width] = useContainerWidth();
   const height = Math.max(200, Math.min(360, Math.round(width * 0.62)));
 
@@ -88,6 +95,10 @@ function WordCloud({ words }: { words: WordFrequency[] }) {
     );
   }
 
+  // Clicking a word searches it, but the cloud stays a single `img` for
+  // assistive tech rather than 60 focusable elements: the search box's
+  // suggestion list reaches every one of these words by keyboard, and reads
+  // their counts out loud while it does.
   return (
     <div
       ref={containerRef}
@@ -111,6 +122,8 @@ function WordCloud({ words }: { words: WordFrequency[] }) {
             renderedWords.map((w, i) => (
               <text
                 key={`${w.text ?? i}-${i}`}
+                onClick={() => onSelect(w.text ?? "")}
+                style={{ cursor: "pointer" }}
                 textAnchor="middle"
                 transform={`translate(${w.x ?? 0}, ${w.y ?? 0}) rotate(${w.rotate ?? 0})`}
                 fontSize={w.size ?? MIN_FONT}
@@ -131,13 +144,27 @@ function WordCloud({ words }: { words: WordFrequency[] }) {
 
 export function NotesAnalysis({
   scopes,
+  searchIndex,
   moodOrder,
 }: {
   scopes: NotesAnalysisScope[];
+  searchIndex: NoteSearchIndex;
   moodOrder: string[];
 }) {
   const [tabIndex, setTabIndex] = useState(() => Math.max(0, scopes.length - 1));
+  const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLDivElement | null>(null);
   const moodIndex = useMemo(() => new Map(moodOrder.map((m, i) => [m, i])), [moodOrder]);
+
+  // Every word shown in this card is a search shortcut. The results land
+  // above the word cloud and the per-mood lists, so scroll back up to them —
+  // otherwise a tap looks like it did nothing. Only for a deliberate pick:
+  // wired to plain typing it would tug the page on every keystroke, since
+  // the scroll margin below puts the panel's top under the sticky header.
+  function searchFor(word: string) {
+    setQuery(word);
+    searchRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
 
   if (scopes.length === 0) return null;
   const active = scopes[Math.min(tabIndex, scopes.length - 1)];
@@ -145,10 +172,27 @@ export function NotesAnalysis({
   // shown best -> worst here, same reasoning as the mood-confirm screen.
   const moodsWithWords = [...active.wordsByMood].reverse().filter((m) => m.words.length > 0);
   const lengthByMoodDesc = [...active.avgLengthByMood].reverse();
+  const hasSearch = searchIndex.vocabulary.length > 0;
   const maxAvgWords = Math.max(1, ...active.avgLengthByMood.map((m) => m.avgWords));
 
   return (
-    <Card title="Notes" subtitle="Most common words across your notes">
+    <Card
+      title="Notes"
+      subtitle={
+        hasSearch ? "Search a word, or see the ones you write most" : "The words you write most"
+      }
+    >
+      {hasSearch && (
+        <div ref={searchRef} className="mb-6 scroll-mt-24">
+          <NoteWordSearch
+            index={searchIndex}
+            query={query}
+            onQueryChange={setQuery}
+            onSelectWord={searchFor}
+          />
+        </div>
+      )}
+
       <div
         role="tablist"
         aria-label="Time scope"
@@ -176,7 +220,12 @@ export function NotesAnalysis({
         Based on {active.entriesWithNotes} of {active.totalEntries} entries with a note.
       </p>
 
-      <WordCloud words={active.topWords} />
+      <WordCloud words={active.topWords} onSelect={searchFor} />
+      {active.topWords.length > 0 && (
+        <p className="mt-2 text-center text-sm text-(--color-text-tertiary)">
+          Tap a word to search it.
+        </p>
+      )}
 
       {moodsWithWords.length > 0 && (
         <div className="mt-6 border-t border-(--color-border) pt-4">
@@ -190,12 +239,14 @@ export function NotesAnalysis({
                 <MoodFace index={moodIndex.get(mood) ?? 0} total={moodOrder.length} size={20} />
                 <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {words.map((w) => (
-                    <span
+                    <button
                       key={w}
-                      className="rounded-full bg-(--color-surface-2) px-2.5 py-0.5 text-sm"
+                      type="button"
+                      onClick={() => searchFor(w)}
+                      className="rounded-full bg-(--color-surface-2) px-2.5 py-0.5 text-sm transition-colors active:bg-(--color-border)"
                     >
                       {w}
-                    </span>
+                    </button>
                   ))}
                 </div>
               </li>

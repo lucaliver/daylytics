@@ -81,7 +81,13 @@ export function Dashboard() {
     {
       id: "notes",
       label: "Notes",
-      node: <NotesAnalysis scopes={dashboardData.notesAnalysis} moodOrder={dashboardData.moodOrder} />,
+      node: (
+        <NotesAnalysis
+          scopes={dashboardData.notesAnalysis}
+          searchIndex={dashboardData.noteSearch}
+          moodOrder={dashboardData.moodOrder}
+        />
+      ),
     },
     {
       id: "achievements",
